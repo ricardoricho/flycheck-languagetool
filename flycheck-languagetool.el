@@ -41,6 +41,11 @@
   :group 'flycheck
   :link '(url-link :tag "Github" "https://github.com/emacs-languagetool/flycheck-languagetool"))
 
+(defface flycheck-languagetool-suggestion-face
+  '((t (:inherit flycheck-fringe-warning)))
+  "Face for suggestions."
+  :group 'flycheck-languagetool)
+
 (defcustom flycheck-languagetool-active-modes
   '(text-mode latex-mode org-mode markdown-mode message-mode)
   "List of major mode that work with LanguageTool."
@@ -189,13 +194,23 @@ These rules will be disabled if Emacs’ `flyspell-mode' or
                    (line-number-at-pos pt-beg)))
              (type 'warning)
              (id (cdr (assoc 'id (assoc 'rule match))))
-             (subid (cdr (assoc 'subId (assoc 'rule match))))
              (desc (cdr (assoc 'message match)))
+             (suggestions
+              (mapconcat  (lambda (replacement)
+                            (let ((suggestion (cdr (assoc 'value replacement))))
+                              (put-text-property 0 (length suggestion)
+                                                 'face
+                                                 'flycheck-languagetool-suggestion-face
+                                                 suggestion)
+                              suggestion))
+                          (cdr (assoc 'replacements match))
+                          " / "))
              (col-start (flycheck-languagetool--column-at-pos pt-beg))
              (col-end (flycheck-languagetool--column-at-pos pt-end)))
-        (push (list ln col-start type desc
+        (push (list ln col-start type
+                    (concat desc " \nSuggestions: " suggestions)
                     :end-column col-end
-                    :id (cons id subid))
+                    :id id)
               check-list)))
     check-list))
 
