@@ -42,11 +42,6 @@
   :group 'flycheck
   :link '(url-link :tag "Github" "https://github.com/emacs-languagetool/flycheck-languagetool"))
 
-(defface flycheck-languagetool-suggestion-face
-  '((t (:inherit diff-changed)))
-  "Flycheck face for LanguageTool suggestions."
-  :group 'flycheck-languagetool)
-
 (defcustom flycheck-languagetool-active-modes
   '(text-mode latex-mode org-mode markdown-mode message-mode)
   "List of major mode that work with LanguageTool."
@@ -160,6 +155,22 @@ or plan to start a local server some other way."
 These rules will be disabled if Emacs’ `flyspell-mode' or
 `jinx-mode' is active.")
 
+(defface flycheck-languagetool-suggestion-face
+  '((t (:inherit diff-changed)))
+  "Flycheck face for LanguageTool suggestions."
+  :group 'flycheck-languagetool)
+
+(defcustom flycheck-languagetool-suggestion-limit 12
+  "The maximum number of correction suggestions to show per warning.
+Any suggestions beyond this count will be ignored."
+  :type '(integer :tag "Count")
+  :safe (lambda (n)
+          (and (integerp n)
+               (< n 256))) ;; This number is somewhat picked out of the
+                           ;; air, but large values can hurt
+                           ;; performance.
+  :group 'flycheck-languagetool)
+
 ;;
 ;; (@* "External" )
 ;;
@@ -213,9 +224,13 @@ These rules will be disabled if Emacs’ `flyspell-mode' or
                               'flycheck-languagetool-suggestion-face
                               suggestion)
                              suggestion))
-                         replacements
+                         (seq-take replacements
+                                   flycheck-languagetool-suggestion-limit)
                          ", ")
-                        "."))))
+                        (if (> (length replacements)
+                               flycheck-languagetool-suggestion-limit)
+                            "…"
+                          ".")))))
              (col-start (flycheck-languagetool--column-at-pos pt-beg))
              (col-end (flycheck-languagetool--column-at-pos pt-end)))
         (push (list ln col-start type desc
