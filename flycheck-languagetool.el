@@ -196,21 +196,29 @@ These rules will be disabled if Emacs’ `flyspell-mode' or
              (type 'warning)
              (id (cdr (assoc 'id (assoc 'rule match))))
              (subid (cdr (assoc 'subId (assoc 'rule match))))
-             (desc (cdr (assoc 'message match)))
-             (suggestions
-              (mapconcat  (lambda (replacement)
-                            (let ((suggestion (cdr (assoc 'value replacement))))
-                              (put-text-property 0 (length suggestion)
-                                                 'face
-                                                 'flycheck-languagetool-suggestion-face
-                                                 suggestion)
-                              suggestion))
-                          (cdr (assoc 'replacements match))
-                          " / "))
+             (replacements (cdr (assoc 'replacements match)))
+             (desc
+              (apply #'concat
+                     (cdr (assoc 'message match))
+                     (when replacements
+                       (list
+                        " Suggestions: "
+                        (mapconcat
+                         (lambda (replacement)
+                           (let ((suggestion (cdr (assoc 'value replacement))))
+                             (put-text-property
+                              0
+                              (length suggestion)
+                              'face
+                              'flycheck-languagetool-suggestion-face
+                              suggestion)
+                             suggestion))
+                         replacements
+                         ", ")
+                        "."))))
              (col-start (flycheck-languagetool--column-at-pos pt-beg))
              (col-end (flycheck-languagetool--column-at-pos pt-end)))
-        (push (list ln col-start type
-                    (concat desc " \nSuggestions: " suggestions)
+        (push (list ln col-start type desc
                     :end-column col-end
                     :id (cons id subid))
               check-list)))
