@@ -32,6 +32,7 @@
 
 ;;; Code:
 
+(require 'diff-mode)
 (require 'flycheck)
 (eval-when-compile (require 'subr-x))
 
